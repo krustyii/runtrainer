@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Settings {
+  id         Int      @id @default(autoincrement())
+  raceDate   DateTime
+  raceName   String?
+  weeklyGoal Int      @default(4)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Activity {
+  id              Int      @id @default(autoincrement())
+  stravaId        String   @unique
+  type            String
+  name            String
+  distance        Float
+  duration        Int
+  avgHeartRate    Int?
+  maxHeartRate    Int?
+  avgPace         Float?
+  calories        Int?
+  date            DateTime
+  perceivedEffort Int?
+  createdAt       DateTime @default(now())
+}
+
+model PlannedWorkout {
+  id          Int      @id @default(autoincrement())
+  weekNumber  Int
+  dayOfWeek   Int
+  type        String
+  distance    Float?
+  duration    Int?
+  description String
+  completed   Boolean  @default(false)
+  activityId  Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
