@@ -21,6 +21,14 @@ interface WeekViewProps {
   totalWeeks: number
 }
 
+function isSameDay(date1: Date, date2: Date): boolean {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  )
+}
+
 export default function WeekView({
   weekNumber,
   workouts,
@@ -28,7 +36,6 @@ export default function WeekView({
   totalWeeks,
 }: WeekViewProps) {
   const today = new Date()
-  const todayDay = today.getDay()
 
   const sortedWorkouts = [...workouts].sort((a, b) => a.dayOfWeek - b.dayOfWeek)
 
@@ -68,13 +75,17 @@ export default function WeekView({
         </div>
       </div>
       <div className="p-4 space-y-3">
-        {sortedWorkouts.map((workout) => (
-          <WorkoutCard
-            key={workout.id}
-            workout={workout}
-            isToday={isCurrentWeek && workout.dayOfWeek === todayDay}
-          />
-        ))}
+        {sortedWorkouts.map((workout) => {
+          const workoutDate = workout.date ? new Date(workout.date) : null
+          const isToday = workoutDate ? isSameDay(workoutDate, today) : false
+          return (
+            <WorkoutCard
+              key={workout.id}
+              workout={workout}
+              isToday={isToday}
+            />
+          )
+        })}
       </div>
     </div>
   )
