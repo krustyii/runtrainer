@@ -1,5 +1,5 @@
 import { prisma } from './db'
-import { PlannedWorkoutData, generateTrainingPlan } from './training-plan'
+import { PlannedWorkoutData, generateTrainingPlan, getWorkoutDate } from './training-plan'
 
 interface AdaptationResult {
   adjustments: string[]
@@ -199,22 +199,38 @@ export async function regeneratePlan(): Promise<void> {
   }
 }
 
-export async function linkActivityToWorkout(activityId: number, activityDate: Date): Promise<void> {
-  const dayOfWeek = activityDate.getDay()
+function isSameDay(date1: Date, date2: Date): boolean {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  )
+}
 
-  // Find matching planned workout for this day
-  const workout = await prisma.plannedWorkout.findFirst({
+export async function linkActivityToWorkout(activityId: number, activityDate: Date): Promise<void> {
+  const settings = await prisma.settings.findFirst()
+  if (!settings) return
+
+  // Get all uncompleted run workouts
+  const workouts = await prisma.plannedWorkout.findMany({
     where: {
-      dayOfWeek,
       completed: false,
       type: { not: 'rest' },
     },
-    orderBy: { weekNumber: 'asc' },
   })
 
-  if (workout) {
+  // Find total weeks in plan
+  const totalWeeks = Math.max(...workouts.map((w) => w.weekNumber), 12)
+
+  // Find workout that matches the actual activity date
+  const matchingWorkout = workouts.find((workout) => {
+    const workoutDate = getWorkoutDate(settings.raceDate, workout.weekNumber, workout.dayOfWeek, totalWeeks)
+    return isSameDay(workoutDate, activityDate)
+  })
+
+  if (matchingWorkout) {
     await prisma.plannedWorkout.update({
-      where: { id: workout.id },
+      where: { id: matchingWorkout.id },
       data: {
         completed: true,
         activityId,
