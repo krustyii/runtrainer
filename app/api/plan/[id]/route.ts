@@ -50,13 +50,18 @@ export async function PATCH(
     const raceWeekStart = new Date(raceDate)
     raceWeekStart.setDate(raceWeekStart.getDate() - raceWeekStart.getDay())
 
+    // Find the start of the week containing the new date (Sunday)
+    const newDateWeekStart = new Date(parsedDate)
+    newDateWeekStart.setDate(newDateWeekStart.getDate() - newDateWeekStart.getDay())
+    newDateWeekStart.setHours(0, 0, 0, 0)
+
     // Get total weeks
     const allWorkouts = await prisma.plannedWorkout.findMany()
     const totalWeeks = Math.max(...allWorkouts.map((w) => w.weekNumber), 12)
 
-    // Calculate which week the new date falls into
-    const weeksUntilRace = Math.ceil((raceWeekStart.getTime() - parsedDate.getTime()) / msPerWeek)
-    const newWeekNumber = totalWeeks - weeksUntilRace + 1
+    // Calculate which week the new date falls into (using week starts for consistency)
+    const weeksUntilRace = Math.round((raceWeekStart.getTime() - newDateWeekStart.getTime()) / msPerWeek)
+    const newWeekNumber = totalWeeks - weeksUntilRace
 
     if (newWeekNumber < 1 || newWeekNumber > totalWeeks) {
       return NextResponse.json(
