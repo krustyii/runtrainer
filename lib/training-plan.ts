@@ -134,12 +134,22 @@ export function generateTrainingPlan(
 ): PlannedWorkoutData[] {
   const workouts: PlannedWorkoutData[] = []
 
-  // Calculate weeks until race
+  // Get start of race week (Sunday) for consistent calculation
+  const raceWeekStart = new Date(raceDate)
+  raceWeekStart.setDate(raceWeekStart.getDate() - raceWeekStart.getDay())
+
+  // Get start of current week (Sunday)
+  const currentWeekStart = new Date(currentDate)
+  currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay())
+  currentWeekStart.setHours(0, 0, 0, 0)
+
+  // Calculate weeks between current week and race week
   const msPerWeek = 7 * 24 * 60 * 60 * 1000
-  const weeksUntilRace = Math.ceil((raceDate.getTime() - currentDate.getTime()) / msPerWeek)
+  const weeksUntilRace = Math.round((raceWeekStart.getTime() - currentWeekStart.getTime()) / msPerWeek)
 
   // Determine which week templates to use based on time available
-  const planWeeks = Math.min(12, Math.max(4, weeksUntilRace))
+  // Add 1 because race week counts as a training week
+  const planWeeks = Math.min(12, Math.max(4, weeksUntilRace + 1))
 
   // If less than 12 weeks, start from later in the plan
   const startWeek = Math.max(1, 12 - planWeeks + 1)
@@ -174,11 +184,18 @@ export function getCurrentWeekNumber(raceDate: Date, totalWeeks: number): number
   const now = new Date()
   const msPerWeek = 7 * 24 * 60 * 60 * 1000
 
+  // Get start of race week (Sunday)
   const raceWeekStart = new Date(raceDate)
   raceWeekStart.setDate(raceWeekStart.getDate() - raceWeekStart.getDay())
 
-  const weeksUntilRace = Math.ceil((raceWeekStart.getTime() - now.getTime()) / msPerWeek)
-  const currentWeek = totalWeeks - weeksUntilRace + 1
+  // Get start of current week (Sunday)
+  const currentWeekStart = new Date(now)
+  currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay())
+  currentWeekStart.setHours(0, 0, 0, 0)
+
+  // Calculate weeks between current week and race week
+  const weeksUntilRace = Math.round((raceWeekStart.getTime() - currentWeekStart.getTime()) / msPerWeek)
+  const currentWeek = totalWeeks - weeksUntilRace
 
   return Math.max(1, Math.min(totalWeeks, currentWeek))
 }
