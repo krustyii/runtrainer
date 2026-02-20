@@ -87,7 +87,20 @@ export async function PATCH(
       )
     }
 
-    // Update the workout
+    // Save original position
+    const originalWeekNumber = workout.weekNumber
+    const originalDayOfWeek = workout.dayOfWeek
+
+    // Delete any rest day at the target location (we're replacing it with a real workout)
+    await prisma.plannedWorkout.deleteMany({
+      where: {
+        weekNumber: newWeekNumber,
+        dayOfWeek: newDayOfWeek,
+        type: 'rest',
+      },
+    })
+
+    // Update the workout to new position
     const updatedWorkout = await prisma.plannedWorkout.update({
       where: { id: workoutId },
       data: {
@@ -95,6 +108,19 @@ export async function PATCH(
         dayOfWeek: newDayOfWeek,
       },
     })
+
+    // Create a rest day at the original position (unless moving within same day)
+    if (originalWeekNumber !== newWeekNumber || originalDayOfWeek !== newDayOfWeek) {
+      await prisma.plannedWorkout.create({
+        data: {
+          weekNumber: originalWeekNumber,
+          dayOfWeek: originalDayOfWeek,
+          type: 'rest',
+          description: 'Rest day (workout moved)',
+          completed: false,
+        },
+      })
+    }
 
     return NextResponse.json({ workout: updatedWorkout })
   } catch (error) {
