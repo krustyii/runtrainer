@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getWorkoutDate } from '@/lib/training-plan'
 
 export async function PATCH(
   request: NextRequest,
@@ -20,7 +21,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'newDate is required' }, { status: 400 })
     }
 
-    const parsedDate = new Date(newDate)
+    // Parse date as local date by adding noon time to avoid timezone issues
+    const parsedDate = new Date(newDate + 'T12:00:00')
     const newDayOfWeek = parsedDate.getDay()
 
     // Get the workout
@@ -36,32 +38,38 @@ export async function PATCH(
       return NextResponse.json({ error: 'Cannot reschedule completed workout' }, { status: 400 })
     }
 
-    // Get settings to calculate week number
+    // Get settings
     const settings = await prisma.settings.findFirst()
     if (!settings) {
       return NextResponse.json({ error: 'Settings not found' }, { status: 404 })
     }
 
-    // Calculate new week number based on the new date
-    const raceDate = new Date(settings.raceDate)
-    const msPerWeek = 7 * 24 * 60 * 60 * 1000
-
-    // Find race week start (Sunday)
-    const raceWeekStart = new Date(raceDate)
-    raceWeekStart.setDate(raceWeekStart.getDate() - raceWeekStart.getDay())
-
-    // Find the start of the week containing the new date (Sunday)
-    const newDateWeekStart = new Date(parsedDate)
-    newDateWeekStart.setDate(newDateWeekStart.getDate() - newDateWeekStart.getDay())
-    newDateWeekStart.setHours(0, 0, 0, 0)
-
-    // Get total weeks
+    // Get all workouts to find total weeks and match dates
     const allWorkouts = await prisma.plannedWorkout.findMany()
-    const totalWeeks = Math.max(...allWorkouts.map((w) => w.weekNumber), 12)
+    const totalWeeks = Math.max(...allWorkouts.map((w) => w.weekNumber), 1)
 
-    // Calculate which week the new date falls into (using week starts for consistency)
-    const weeksUntilRace = Math.round((raceWeekStart.getTime() - newDateWeekStart.getTime()) / msPerWeek)
-    const newWeekNumber = totalWeeks - weeksUntilRace
+    // Find the week number by checking which week contains the target date
+    // We do this by finding a Sunday (dayOfWeek=0) workout in each week and comparing
+    let newWeekNumber = -1
+
+    for (let week = 1; week <= totalWeeks; week++) {
+      // Get the date for Sunday of this week
+      const weekSundayDate = getWorkoutDate(settings.raceDate, week, 0, totalWeeks)
+
+      // Check if target date is in this week (Sunday to Saturday)
+      const weekStart = new Date(weekSundayDate)
+      weekStart.setHours(0, 0, 0, 0)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekEnd.getDate() + 7)
+
+      const targetDate = new Date(parsedDate)
+      targetDate.setHours(0, 0, 0, 0)
+
+      if (targetDate >= weekStart && targetDate < weekEnd) {
+        newWeekNumber = week
+        break
+      }
+    }
 
     if (newWeekNumber < 1 || newWeekNumber > totalWeeks) {
       return NextResponse.json(
