@@ -19,6 +19,7 @@ interface WeekViewProps {
   workouts: Workout[]
   isCurrentWeek?: boolean
   totalWeeks: number
+  onReschedule?: (workoutId: number, newDate: string) => Promise<void>
 }
 
 function isSameDay(date1: Date, date2: Date): boolean {
@@ -34,6 +35,7 @@ export default function WeekView({
   workouts,
   isCurrentWeek = false,
   totalWeeks,
+  onReschedule,
 }: WeekViewProps) {
   const today = new Date()
 
@@ -83,6 +85,7 @@ export default function WeekView({
               key={workout.id}
               workout={workout}
               isToday={isToday}
+              onReschedule={onReschedule}
             />
           )
         })}

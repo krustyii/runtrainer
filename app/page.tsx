@@ -94,6 +94,22 @@ export default function Dashboard() {
     )
   }
 
+  async function handleReschedule(workoutId: number, newDate: string) {
+    const res = await fetch(`/api/plan/${workoutId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newDate }),
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Failed to reschedule')
+    }
+
+    // Refresh the plan
+    fetchPlan()
+  }
+
   if (!planData) return null
 
   const { workouts, currentWeek, totalWeeks, raceDate, raceName } = planData
@@ -192,6 +208,7 @@ export default function Dashboard() {
           workouts={currentWeekWorkouts}
           isCurrentWeek={true}
           totalWeeks={totalWeeks}
+          onReschedule={handleReschedule}
         />
       </div>
 
@@ -215,6 +232,7 @@ export default function Dashboard() {
                 workouts={weekWorkouts}
                 isCurrentWeek={weekNum === currentWeek}
                 totalWeeks={totalWeeks}
+                onReschedule={handleReschedule}
               />
             )
           })}
