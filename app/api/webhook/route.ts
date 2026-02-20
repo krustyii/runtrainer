@@ -6,13 +6,13 @@ interface ZapierWebhookPayload {
   activity_id: string
   type: string
   name: string
-  distance: number
-  moving_time: number
-  elapsed_time?: number
+  distance: string | number
+  moving_time: string | number
+  elapsed_time?: string | number
   start_date: string
-  average_heartrate?: number
-  max_heartrate?: number
-  calories?: number
+  average_heartrate?: string | number
+  max_heartrate?: string | number
+  calories?: string | number
 }
 
 export async function POST(request: NextRequest) {
@@ -39,9 +39,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Parse numeric fields (Zapier sends them as strings)
+    const distance = parseFloat(String(payload.distance))
+    const movingTime = parseInt(String(payload.moving_time), 10)
+    const avgHeartRate = payload.average_heartrate ? Math.round(parseFloat(String(payload.average_heartrate))) : null
+    const maxHeartRate = payload.max_heartrate ? Math.round(parseFloat(String(payload.max_heartrate))) : null
+    const calories = payload.calories ? parseInt(String(payload.calories), 10) : null
+
     // Calculate average pace (min/km)
-    const distanceKm = payload.distance / 1000
-    const durationMin = payload.moving_time / 60
+    const distanceKm = distance / 1000
+    const durationMin = movingTime / 60
     const avgPace = distanceKm > 0 ? durationMin / distanceKm : null
 
     // Create the activity
@@ -50,12 +57,12 @@ export async function POST(request: NextRequest) {
         stravaId: payload.activity_id,
         type: payload.type,
         name: payload.name || 'Untitled Activity',
-        distance: payload.distance,
-        duration: payload.moving_time,
-        avgHeartRate: payload.average_heartrate ? Math.round(payload.average_heartrate) : null,
-        maxHeartRate: payload.max_heartrate ? Math.round(payload.max_heartrate) : null,
+        distance,
+        duration: movingTime,
+        avgHeartRate,
+        maxHeartRate,
         avgPace,
-        calories: payload.calories || null,
+        calories,
         date: new Date(payload.start_date),
       },
     })
