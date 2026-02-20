@@ -200,10 +200,11 @@ export async function regeneratePlan(): Promise<void> {
 }
 
 function isSameDay(date1: Date, date2: Date): boolean {
+  // Compare using UTC to avoid timezone issues
   return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
+    date1.getUTCFullYear() === date2.getUTCFullYear() &&
+    date1.getUTCMonth() === date2.getUTCMonth() &&
+    date1.getUTCDate() === date2.getUTCDate()
   )
 }
 
@@ -211,16 +212,12 @@ export async function linkActivityToWorkout(activityId: number, activityDate: Da
   const settings = await prisma.settings.findFirst()
   if (!settings) return
 
-  // Get all uncompleted run workouts
-  const workouts = await prisma.plannedWorkout.findMany({
-    where: {
-      completed: false,
-      type: { not: 'rest' },
-    },
-  })
+  // Get all workouts to find total weeks
+  const allWorkouts = await prisma.plannedWorkout.findMany()
+  const totalWeeks = Math.max(...allWorkouts.map((w) => w.weekNumber), 1)
 
-  // Find total weeks in plan
-  const totalWeeks = Math.max(...workouts.map((w) => w.weekNumber), 12)
+  // Get uncompleted run workouts
+  const workouts = allWorkouts.filter(w => !w.completed && w.type !== 'rest')
 
   // Find workout that matches the actual activity date
   const matchingWorkout = workouts.find((workout) => {
