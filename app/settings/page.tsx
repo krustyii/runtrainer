@@ -93,6 +93,26 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleClearAll() {
+    if (!confirm('Are you sure you want to clear ALL data? This will delete your activity history and training plan. This cannot be undone.')) {
+      return
+    }
+
+    try {
+      const res = await fetch('/api/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clearAll' }),
+      })
+
+      if (!res.ok) throw new Error('Failed to clear data')
+
+      setMessage({ type: 'success', text: 'All data has been cleared.' })
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to clear data. Please try again.' })
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -208,15 +228,30 @@ export default function SettingsPage() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Danger Zone
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Reset your training plan to start fresh. This will clear all completed workout data.
-          </p>
-          <button
-            onClick={handleResetPlan}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-          >
-            Reset Training Plan
-          </button>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                Reset your training plan to start fresh. Keeps your activity history.
+              </p>
+              <button
+                onClick={handleResetPlan}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Reset Training Plan
+              </button>
+            </div>
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                Clear everything including activity history. This cannot be undone.
+              </p>
+              <button
+                onClick={handleClearAll}
+                className="px-4 py-2 bg-red-800 text-white rounded-md hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Clear All Data
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -88,6 +88,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Plan reset successfully' })
     }
 
+    if (body.action === 'clearAll') {
+      // Delete all activities and workouts, then regenerate plan
+      await prisma.activity.deleteMany()
+      await prisma.plannedWorkout.deleteMany()
+
+      const settings = await prisma.settings.findFirst()
+      if (settings) {
+        const plan = generateTrainingPlan(settings.raceDate)
+        for (const workout of plan) {
+          await prisma.plannedWorkout.create({ data: workout })
+        }
+      }
+
+      return NextResponse.json({ message: 'All data cleared successfully' })
+    }
+
     return NextResponse.json(
       { error: 'Invalid action' },
       { status: 400 }
