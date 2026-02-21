@@ -164,7 +164,7 @@ export async function generateRunAnalysis(
   })
 
   const generativeModel = vertexAI.getGenerativeModel({
-    model: 'gemini-3.0-flash-preview-0514',
+    model: 'gemini-2.0-flash-001',
   })
 
   const activityContext = buildActivityContext(activity)
