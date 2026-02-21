@@ -9,7 +9,7 @@ export interface PlannedWorkoutData {
   description: string
 }
 
-const HALF_MARATHON_DISTANCE = 21.1
+const HALF_MARATHON_DISTANCE = 21.1 // Official: 21.0975 km
 
 // Base weekly templates for a 12-week half-marathon plan
 // Distances in km, durations in minutes
