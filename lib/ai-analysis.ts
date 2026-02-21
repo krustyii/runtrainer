@@ -140,7 +140,7 @@ export async function generateRunAnalysis(
   recentActivities: Activity[]
 ): Promise<RunAnalysisData> {
   const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID
-  const region = process.env.GOOGLE_CLOUD_REGION || 'europe-west1'
+  const region = process.env.GOOGLE_CLOUD_REGION || 'us-east5'
 
   if (!projectId) {
     console.warn('Google Cloud project not configured, returning placeholder analysis')
