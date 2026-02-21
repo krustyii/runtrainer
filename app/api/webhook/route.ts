@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { linkActivityToWorkout, regeneratePlan } from '@/lib/adaptation'
+import { generateAndStoreAnalysis } from '@/lib/ai-analysis'
 
 interface ZapierWebhookPayload {
   activity_id: string
@@ -73,6 +74,9 @@ export async function POST(request: NextRequest) {
 
       // Regenerate plan with adaptations
       await regeneratePlan()
+
+      // Generate AI analysis for the new activity
+      await generateAndStoreAnalysis(activity.id)
     }
 
     return NextResponse.json(

@@ -46,3 +46,15 @@ model PlannedWorkout {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model RunAnalysis {
+  id           Int      @id @default(autoincrement())
+  activityId   Int      @unique
+  summary      String   // Short summary (1-2 sentences)
+  insights     String   // Detailed analysis (markdown)
+  paceAnalysis String?  // Pacing strategy feedback
+  hrAnalysis   String?  // Heart rate zone analysis
+  comparison   String?  // Comparison to planned workout
+  suggestions  String?  // Improvements for next time
+  createdAt    DateTime @default(now())
+}

@@ -4,6 +4,18 @@ import { useEffect, useState } from 'react'
 import ActivityCard from '@/components/ActivityCard'
 import { useTheme } from '@/components/ThemeProvider'
 
+interface RunAnalysis {
+  id: number
+  activityId: number
+  summary: string
+  insights: string
+  paceAnalysis: string | null
+  hrAnalysis: string | null
+  comparison: string | null
+  suggestions: string | null
+  createdAt: string
+}
+
 interface Activity {
   id: number
   stravaId: string
@@ -20,6 +32,7 @@ interface Activity {
 
 interface ActivitiesData {
   activities: Activity[]
+  analyses: RunAnalysis[]
   total: number
   limit: number
   offset: number
@@ -37,7 +50,7 @@ export default function HistoryPage() {
 
   async function fetchActivities() {
     try {
-      const res = await fetch('/api/activities')
+      const res = await fetch('/api/activities?includeAnalysis=true')
       if (!res.ok) throw new Error('Failed to fetch activities')
       const data = await res.json()
       setData(data)
@@ -71,6 +84,13 @@ export default function HistoryPage() {
   }
 
   const activities = data?.activities || []
+  const analyses = data?.analyses || []
+
+  // Create a map of activityId -> analysis for quick lookup
+  const analysisMap = new Map<number, RunAnalysis>()
+  analyses.forEach((analysis) => {
+    analysisMap.set(analysis.activityId, analysis)
+  })
 
   // Calculate stats
   const totalDistance = activities.reduce((sum, a) => sum + a.distance, 0) / 1000
@@ -154,7 +174,11 @@ export default function HistoryPage() {
       ) : (
         <div className="space-y-4">
           {activities.map((activity) => (
-            <ActivityCard key={activity.id} activity={activity} />
+            <ActivityCard
+              key={activity.id}
+              activity={activity}
+              analysis={analysisMap.get(activity.id) || null}
+            />
           ))}
         </div>
       )}
