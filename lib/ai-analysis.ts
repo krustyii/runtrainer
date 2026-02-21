@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import AnthropicVertex from '@anthropic-ai/vertex-sdk'
 import { prisma } from './db'
 
 interface Activity {
@@ -112,19 +112,42 @@ function buildRecentActivitiesContext(activities: Activity[]): string {
   return `Recent Activities (last ${activities.length}):\n${summaries.join('\n')}`
 }
 
+function setupGoogleCredentials(): void {
+  // If GOOGLE_APPLICATION_CREDENTIALS_JSON is set, write it to a temp file
+  const credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON
+  if (credentialsJson && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    const fs = require('fs')
+    const os = require('os')
+    const path = require('path')
+
+    const tempDir = os.tmpdir()
+    const credentialsPath = path.join(tempDir, 'gcp-credentials.json')
+
+    // Decode base64 if it looks like base64, otherwise use as-is
+    let credentials = credentialsJson
+    if (!credentialsJson.startsWith('{')) {
+      credentials = Buffer.from(credentialsJson, 'base64').toString('utf-8')
+    }
+
+    fs.writeFileSync(credentialsPath, credentials)
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath
+  }
+}
+
 export async function generateRunAnalysis(
   activity: Activity,
   plannedWorkout: PlannedWorkout | null,
   recentActivities: Activity[]
 ): Promise<RunAnalysisData> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID
+  const region = process.env.GOOGLE_CLOUD_REGION || 'europe-west1'
 
-  if (!apiKey) {
-    console.warn('ANTHROPIC_API_KEY not set, returning placeholder analysis')
+  if (!projectId) {
+    console.warn('Google Cloud project not configured, returning placeholder analysis')
     return {
       activityId: activity.id,
-      summary: 'AI analysis is not available. Please configure ANTHROPIC_API_KEY.',
-      insights: 'To enable AI-powered run analysis, add your Anthropic API key to the environment variables.',
+      summary: 'AI analysis is not available. Please configure Google Cloud project.',
+      insights: 'To enable AI-powered run analysis, set GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS_JSON environment variables.',
       paceAnalysis: null,
       hrAnalysis: null,
       comparison: null,
@@ -132,7 +155,13 @@ export async function generateRunAnalysis(
     }
   }
 
-  const anthropic = new Anthropic({ apiKey })
+  // Setup credentials from environment variable
+  setupGoogleCredentials()
+
+  const client = new AnthropicVertex({
+    projectId,
+    region,
+  })
 
   const activityContext = buildActivityContext(activity)
   const plannedContext = buildPlannedWorkoutContext(plannedWorkout)
@@ -167,8 +196,8 @@ Guidelines:
 Respond with only valid JSON, no markdown code blocks or additional text.`
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await client.messages.create({
+      model: 'claude-3-5-sonnet-v2@20241022',
       max_tokens: 1024,
       messages: [
         {
