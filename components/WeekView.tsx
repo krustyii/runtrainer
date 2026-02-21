@@ -1,6 +1,7 @@
 'use client'
 
 import WorkoutCard from './WorkoutCard'
+import { useTheme } from './ThemeProvider'
 
 interface Workout {
   id: number
@@ -38,6 +39,7 @@ export default function WeekView({
   totalWeeks,
   onReschedule,
 }: WeekViewProps) {
+  const { theme } = useTheme()
   const today = new Date()
 
   const sortedWorkouts = [...workouts].sort((a, b) => a.dayOfWeek - b.dayOfWeek)
@@ -48,32 +50,32 @@ export default function WeekView({
 
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border ${
+      className={`${theme.colors.bgCard} rounded-xl shadow-sm border ${
         isCurrentWeek
-          ? 'border-indigo-300 dark:border-indigo-700'
-          : 'border-gray-200 dark:border-gray-700'
+          ? theme.colors.accentText.replace('text-', 'border-')
+          : theme.colors.border
       }`}
     >
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className={`p-4 border-b ${theme.colors.border}`}>
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className={`text-lg font-semibold ${theme.colors.textPrimary}`}>
               Week {weekNumber}
               {weekNumber === totalWeeks && (
-                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 rounded">
+                <span className={`ml-2 px-2 py-0.5 text-xs font-medium ${theme.colors.danger} bg-red-500/20 rounded`}>
                   Race Week
                 </span>
               )}
             </h3>
             {isCurrentWeek && (
-              <span className="text-sm text-indigo-600 dark:text-indigo-400">Current Week</span>
+              <span className={`text-sm ${theme.colors.accentText}`}>Current Week</span>
             )}
           </div>
           <div className="text-right">
-            <p className="text-sm font-medium text-gray-900 dark:text-white">
+            <p className={`text-sm font-medium ${theme.colors.textPrimary}`}>
               {completedCount}/{totalRuns} runs
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{totalDistance.toFixed(1)} km planned</p>
+            <p className={`text-sm ${theme.colors.textMuted}`}>{totalDistance.toFixed(1)} km planned</p>
           </div>
         </div>
       </div>

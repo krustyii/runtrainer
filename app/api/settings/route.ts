@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
           raceDate,
           raceName: body.raceName || null,
           weeklyGoal: body.weeklyGoal || 4,
+          theme: body.theme || existing.theme || 'default',
         },
       })
 

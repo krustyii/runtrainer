@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import ActivityCard from '@/components/ActivityCard'
+import { useTheme } from '@/components/ThemeProvider'
 
 interface Activity {
   id: number
@@ -25,6 +26,7 @@ interface ActivitiesData {
 }
 
 export default function HistoryPage() {
+  const { theme } = useTheme()
   const [data, setData] = useState<ActivitiesData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -49,7 +51,7 @@ export default function HistoryPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
+        <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${theme.colors.accentText.replace('text-', 'border-')}`} />
       </div>
     )
   }
@@ -57,10 +59,10 @@ export default function HistoryPage() {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600 dark:text-red-400">{error}</p>
+        <p className={theme.colors.danger}>{error}</p>
         <button
           onClick={fetchActivities}
-          className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          className={`mt-4 px-4 py-2 ${theme.colors.accent} text-white rounded-md ${theme.colors.accentHover}`}
         >
           Retry
         </button>
@@ -81,42 +83,42 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Activity History</h1>
+      <h1 className={`text-2xl font-bold ${theme.colors.textPrimary}`}>Activity History</h1>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className={`${theme.colors.bgCard} rounded-xl shadow-sm border ${theme.colors.border} p-6`}>
+          <p className={`text-sm ${theme.colors.textMuted} uppercase tracking-wide`}>
             Total Activities
           </p>
-          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+          <p className={`mt-2 text-2xl font-bold ${theme.colors.textPrimary}`}>
             {activities.length}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className={`${theme.colors.bgCard} rounded-xl shadow-sm border ${theme.colors.border} p-6`}>
+          <p className={`text-sm ${theme.colors.textMuted} uppercase tracking-wide`}>
             Total Distance
           </p>
-          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+          <p className={`mt-2 text-2xl font-bold ${theme.colors.textPrimary}`}>
             {totalDistance.toFixed(1)} km
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className={`${theme.colors.bgCard} rounded-xl shadow-sm border ${theme.colors.border} p-6`}>
+          <p className={`text-sm ${theme.colors.textMuted} uppercase tracking-wide`}>
             Total Time
           </p>
-          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+          <p className={`mt-2 text-2xl font-bold ${theme.colors.textPrimary}`}>
             {Math.round(totalDuration / 3600)}h {Math.round((totalDuration % 3600) / 60)}m
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className={`${theme.colors.bgCard} rounded-xl shadow-sm border ${theme.colors.border} p-6`}>
+          <p className={`text-sm ${theme.colors.textMuted} uppercase tracking-wide`}>
             Avg Pace
           </p>
-          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+          <p className={`mt-2 text-2xl font-bold ${theme.colors.textPrimary}`}>
             {avgPace > 0
               ? `${Math.floor(avgPace)}:${Math.round((avgPace % 1) * 60)
                   .toString()
@@ -128,9 +130,9 @@ export default function HistoryPage() {
 
       {/* Activities List */}
       {activities.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+        <div className={`${theme.colors.bgCard} rounded-xl shadow-sm border ${theme.colors.border} p-8 text-center`}>
           <svg
-            className="mx-auto h-12 w-12 text-gray-400"
+            className={`mx-auto h-12 w-12 ${theme.colors.textMuted}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -142,10 +144,10 @@ export default function HistoryPage() {
               d="M13 10V3L4 14h7v7l9-11h-7z"
             />
           </svg>
-          <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+          <h3 className={`mt-4 text-lg font-medium ${theme.colors.textPrimary}`}>
             No activities yet
           </h3>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">
+          <p className={`mt-2 ${theme.colors.textMuted}`}>
             Activities from Strava will appear here once you connect via Zapier.
           </p>
         </div>

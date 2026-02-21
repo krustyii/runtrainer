@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { themes } from '@/lib/themes'
+import { useTheme } from '@/components/ThemeProvider'
 
 interface Settings {
   id: number
   raceDate: string
   raceName?: string
   weeklyGoal: number
+  theme?: string
 }
 
 export default function SettingsPage() {
   const router = useRouter()
+  const { setThemeName } = useTheme()
   const [settings, setSettings] = useState<Settings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -20,6 +24,7 @@ export default function SettingsPage() {
   const [raceDate, setRaceDate] = useState('')
   const [raceName, setRaceName] = useState('')
   const [weeklyGoal, setWeeklyGoal] = useState(4)
+  const [selectedTheme, setSelectedTheme] = useState('default')
 
   useEffect(() => {
     fetchSettings()
@@ -34,6 +39,7 @@ export default function SettingsPage() {
         setRaceDate(new Date(data.settings.raceDate).toISOString().split('T')[0])
         setRaceName(data.settings.raceName || '')
         setWeeklyGoal(data.settings.weeklyGoal)
+        setSelectedTheme(data.settings.theme || 'default')
       }
     } catch (err) {
       console.error('Failed to fetch settings:', err)
@@ -55,15 +61,16 @@ export default function SettingsPage() {
           raceDate,
           raceName: raceName || null,
           weeklyGoal,
+          theme: selectedTheme,
         }),
       })
 
       if (!res.ok) throw new Error('Failed to save settings')
 
+      setThemeName(selectedTheme)
       setMessage({ type: 'success', text: 'Settings saved successfully!' })
 
       if (!settings) {
-        // First time setup, redirect to dashboard
         setTimeout(() => router.push('/'), 1500)
       }
     } catch (err) {
@@ -121,10 +128,17 @@ export default function SettingsPage() {
     )
   }
 
-  // Calculate minimum date (at least 4 weeks from now)
   const minDate = new Date()
   minDate.setDate(minDate.getDate() + 28)
   const minDateStr = minDate.toISOString().split('T')[0]
+
+  const themePreviewColors: Record<string, { accent: string; bg: string }> = {
+    default: { accent: 'bg-indigo-500', bg: 'bg-gray-800' },
+    runner: { accent: 'bg-orange-500', bg: 'bg-slate-800' },
+    neon: { accent: 'bg-lime-500', bg: 'bg-zinc-900' },
+    ocean: { accent: 'bg-cyan-500', bg: 'bg-slate-900' },
+    forest: { accent: 'bg-emerald-600', bg: 'bg-stone-800' },
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -212,6 +226,51 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            App Theme
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Choose a visual style for your training dashboard
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {Object.entries(themes).map(([key, theme]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSelectedTheme(key)}
+                className={`relative p-4 rounded-lg border-2 transition-all text-left ${
+                  selectedTheme === key
+                    ? 'border-indigo-500 ring-2 ring-indigo-200 dark:ring-indigo-800'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`w-10 h-10 rounded-lg ${themePreviewColors[key]?.bg || 'bg-gray-800'} flex items-center justify-center`}>
+                    <div className={`w-5 h-5 rounded-full ${themePreviewColors[key]?.accent || 'bg-indigo-500'}`} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">{theme.label}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{theme.description}</p>
+                  </div>
+                </div>
+                <div className="flex gap-1 mt-2">
+                  <div className={`h-2 flex-1 rounded ${themePreviewColors[key]?.bg || 'bg-gray-800'}`} />
+                  <div className={`h-2 w-8 rounded ${themePreviewColors[key]?.accent || 'bg-indigo-500'}`} />
+                </div>
+                {selectedTheme === key && (
+                  <div className="absolute top-2 right-2">
+                    <svg className="w-5 h-5 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex justify-end">
           <button
             type="submit"
@@ -275,31 +334,6 @@ export default function SettingsPage() {
           </li>
           <li>Set Payload Type to JSON and map the Strava fields</li>
         </ol>
-        <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-800 rounded-md">
-          <p className="text-xs font-mono text-blue-900 dark:text-blue-100">
-            Expected payload format:
-            <br />
-            {`{`}
-            <br />
-            &nbsp;&nbsp;&quot;activity_id&quot;: &quot;123&quot;,
-            <br />
-            &nbsp;&nbsp;&quot;type&quot;: &quot;Run&quot;,
-            <br />
-            &nbsp;&nbsp;&quot;name&quot;: &quot;Morning Run&quot;,
-            <br />
-            &nbsp;&nbsp;&quot;distance&quot;: 5200,
-            <br />
-            &nbsp;&nbsp;&quot;moving_time&quot;: 1800,
-            <br />
-            &nbsp;&nbsp;&quot;start_date&quot;: &quot;2024-01-15T07:30:00Z&quot;,
-            <br />
-            &nbsp;&nbsp;&quot;average_heartrate&quot;: 145,
-            <br />
-            &nbsp;&nbsp;&quot;max_heartrate&quot;: 165
-            <br />
-            {`}`}
-          </p>
-        </div>
       </div>
     </div>
   )

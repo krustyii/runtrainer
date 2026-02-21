@@ -12,6 +12,7 @@ model Settings {
   raceDate   DateTime
   raceName   String?
   weeklyGoal Int      @default(4)
+  theme      String   @default("default")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

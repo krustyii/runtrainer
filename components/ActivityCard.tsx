@@ -1,5 +1,7 @@
 'use client'
 
+import { useTheme } from './ThemeProvider'
+
 interface Activity {
   id: number
   stravaId: string
@@ -36,15 +38,16 @@ function formatDuration(seconds: number): string {
 }
 
 export default function ActivityCard({ activity }: ActivityCardProps) {
+  const { theme } = useTheme()
   const date = new Date(activity.date)
   const distanceKm = activity.distance / 1000
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+    <div className={`${theme.colors.bgCard} rounded-lg border ${theme.colors.border} p-4`}>
       <div className="flex items-start justify-between">
         <div>
-          <h4 className="font-medium text-gray-900 dark:text-white">{activity.name}</h4>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h4 className={`font-medium ${theme.colors.textPrimary}`}>{activity.name}</h4>
+          <p className={`text-sm ${theme.colors.textMuted}`}>
             {date.toLocaleDateString('en-US', {
               weekday: 'short',
               month: 'short',
@@ -53,43 +56,43 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
             })}
           </p>
         </div>
-        <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 rounded">
+        <span className={`px-2 py-1 text-xs font-medium ${theme.colors.accentLight} ${theme.colors.accentText} rounded`}>
           {activity.type}
         </span>
       </div>
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Distance</p>
-          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+          <p className={`text-xs ${theme.colors.textMuted} uppercase tracking-wide`}>Distance</p>
+          <p className={`text-lg font-semibold ${theme.colors.textPrimary}`}>
             {distanceKm.toFixed(2)} km
           </p>
         </div>
         <div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Duration</p>
-          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+          <p className={`text-xs ${theme.colors.textMuted} uppercase tracking-wide`}>Duration</p>
+          <p className={`text-lg font-semibold ${theme.colors.textPrimary}`}>
             {formatDuration(activity.duration)}
           </p>
         </div>
         {activity.avgPace && (
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Avg Pace</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
+            <p className={`text-xs ${theme.colors.textMuted} uppercase tracking-wide`}>Avg Pace</p>
+            <p className={`text-lg font-semibold ${theme.colors.textPrimary}`}>
               {formatPace(activity.avgPace)} /km
             </p>
           </div>
         )}
         {activity.avgHeartRate && (
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Avg HR</p>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
+            <p className={`text-xs ${theme.colors.textMuted} uppercase tracking-wide`}>Avg HR</p>
+            <p className={`text-lg font-semibold ${theme.colors.textPrimary}`}>
               {activity.avgHeartRate} bpm
             </p>
           </div>
         )}
       </div>
       {activity.calories && (
-        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+        <div className={`mt-3 pt-3 border-t ${theme.colors.border}`}>
+          <p className={`text-sm ${theme.colors.textMuted}`}>
             {activity.calories} calories burned
           </p>
         </div>

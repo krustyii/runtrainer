@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import WeekView from '@/components/WeekView'
 import ProgressChart from '@/components/ProgressChart'
+import { useTheme } from '@/components/ThemeProvider'
 
 interface Workout {
   id: number
@@ -26,6 +27,7 @@ interface PlanData {
 }
 
 export default function Dashboard() {
+  const { theme } = useTheme()
   const [planData, setPlanData] = useState<PlanData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -54,7 +56,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
+        <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${theme.colors.accentText.replace('text-', 'border-')}`} />
       </div>
     )
   }
@@ -62,16 +64,16 @@ export default function Dashboard() {
   if (error === 'setup') {
     return (
       <div className="max-w-md mx-auto text-center py-12">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className={`${theme.colors.bgCard} rounded-xl shadow-sm border ${theme.colors.border} p-8`}>
+          <h2 className={`text-2xl font-bold ${theme.colors.textPrimary} mb-4`}>
             Welcome to RunTrainer
           </h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
+          <p className={`${theme.colors.textSecondary} mb-6`}>
             Set up your race date to get started with your personalized half-marathon training plan.
           </p>
           <Link
             href="/settings"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${theme.colors.accent} ${theme.colors.accentHover} focus:outline-none focus:ring-2 focus:ring-offset-2`}
           >
             Set Up Race Date
           </Link>
@@ -83,10 +85,10 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-red-600 dark:text-red-400">{error}</p>
+        <p className={theme.colors.danger}>{error}</p>
         <button
           onClick={fetchPlan}
-          className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          className={`mt-4 px-4 py-2 ${theme.colors.accent} text-white rounded-md ${theme.colors.accentHover}`}
         >
           Retry
         </button>
@@ -149,14 +151,14 @@ export default function Dashboard() {
     <div className="space-y-8">
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className={`${theme.colors.bgCard} rounded-xl shadow-sm border ${theme.colors.border} p-6`}>
+          <p className={`text-sm ${theme.colors.textMuted} uppercase tracking-wide`}>
             Race Day
           </p>
-          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+          <p className={`mt-2 text-2xl font-bold ${theme.colors.textPrimary}`}>
             {daysUntilRace} days
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className={`text-sm ${theme.colors.textMuted}`}>
             {raceName || 'Half Marathon'} on{' '}
             {raceDateObj.toLocaleDateString('en-US', {
               month: 'long',
@@ -166,34 +168,34 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className={`${theme.colors.bgCard} rounded-xl shadow-sm border ${theme.colors.border} p-6`}>
+          <p className={`text-sm ${theme.colors.textMuted} uppercase tracking-wide`}>
             Current Week
           </p>
-          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+          <p className={`mt-2 text-2xl font-bold ${theme.colors.textPrimary}`}>
             Week {currentWeek} of {totalWeeks}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className={`text-sm ${theme.colors.textMuted}`}>
             {currentWeekWorkouts.filter((w) => w.completed && w.type !== 'rest').length} /{' '}
             {currentWeekWorkouts.filter((w) => w.type !== 'rest').length} workouts completed
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <div className={`${theme.colors.bgCard} rounded-xl shadow-sm border ${theme.colors.border} p-6`}>
+          <p className={`text-sm ${theme.colors.textMuted} uppercase tracking-wide`}>
             Next Workout
           </p>
           {nextWorkout ? (
             <>
-              <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white capitalize">
+              <p className={`mt-2 text-2xl font-bold ${theme.colors.textPrimary} capitalize`}>
                 {nextWorkout.type} Run
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className={`text-sm ${theme.colors.textMuted}`}>
                 {nextWorkout.distance} km - {nextWorkout.description}
               </p>
             </>
           ) : (
-            <p className="mt-2 text-lg text-gray-500 dark:text-gray-400">
+            <p className={`mt-2 text-lg ${theme.colors.textMuted}`}>
               All workouts completed this week!
             </p>
           )}
@@ -202,7 +204,7 @@ export default function Dashboard() {
 
       {/* Current Week View */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">This Week</h2>
+        <h2 className={`text-xl font-semibold ${theme.colors.textPrimary} mb-4`}>This Week</h2>
         <WeekView
           weekNumber={currentWeek}
           workouts={currentWeekWorkouts}
@@ -219,7 +221,7 @@ export default function Dashboard() {
 
       {/* Full Plan Overview */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <h2 className={`text-xl font-semibold ${theme.colors.textPrimary} mb-4`}>
           Full Training Plan
         </h2>
         <div className="space-y-6">
