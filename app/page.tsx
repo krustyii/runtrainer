@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import WeekView from '@/components/WeekView'
 import ProgressChart from '@/components/ProgressChart'
+import CalendarView from '@/components/CalendarView'
 import { useTheme } from '@/components/ThemeProvider'
 
 interface Workout {
@@ -218,6 +219,9 @@ export default function Dashboard() {
       {weeklyData.length > 0 && (
         <ProgressChart data={weeklyData} currentWeek={currentWeek} />
       )}
+
+      {/* Calendar View */}
+      <CalendarView workouts={workouts} raceDate={raceDate} />
 
       {/* Full Plan Overview */}
       <div>
