@@ -1,4 +1,4 @@
-import AnthropicVertex from '@anthropic-ai/vertex-sdk'
+import { VertexAI } from '@google-cloud/vertexai'
 import { prisma } from './db'
 
 interface Activity {
@@ -140,7 +140,7 @@ export async function generateRunAnalysis(
   recentActivities: Activity[]
 ): Promise<RunAnalysisData> {
   const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCP_PROJECT_ID
-  const region = process.env.GOOGLE_CLOUD_REGION || 'us-east5'
+  const location = process.env.GOOGLE_CLOUD_REGION || 'us-central1'
 
   if (!projectId) {
     console.warn('Google Cloud project not configured, returning placeholder analysis')
@@ -158,9 +158,13 @@ export async function generateRunAnalysis(
   // Setup credentials from environment variable
   setupGoogleCredentials()
 
-  const client = new AnthropicVertex({
-    projectId,
-    region,
+  const vertexAI = new VertexAI({
+    project: projectId,
+    location,
+  })
+
+  const generativeModel = vertexAI.getGenerativeModel({
+    model: 'gemini-2.0-flash-001',
   })
 
   const activityContext = buildActivityContext(activity)
@@ -196,23 +200,26 @@ Guidelines:
 Respond with only valid JSON, no markdown code blocks or additional text.`
 
   try {
-    const response = await client.messages.create({
-      model: 'claude-3-haiku@20240307',
-      max_tokens: 1024,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    })
+    const result = await generativeModel.generateContent(prompt)
+    const response = result.response
 
-    const textContent = response.content.find((block) => block.type === 'text')
-    if (!textContent || textContent.type !== 'text') {
+    const textContent = response.candidates?.[0]?.content?.parts?.[0]?.text
+    if (!textContent) {
       throw new Error('No text response from AI')
     }
 
-    const analysisText = textContent.text.trim()
+    // Clean up the response - remove markdown code blocks if present
+    let analysisText = textContent.trim()
+    if (analysisText.startsWith('```json')) {
+      analysisText = analysisText.slice(7)
+    } else if (analysisText.startsWith('```')) {
+      analysisText = analysisText.slice(3)
+    }
+    if (analysisText.endsWith('```')) {
+      analysisText = analysisText.slice(0, -3)
+    }
+    analysisText = analysisText.trim()
+
     const analysis: AIAnalysisResponse = JSON.parse(analysisText)
 
     return {
