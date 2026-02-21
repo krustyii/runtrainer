@@ -28,6 +28,14 @@ const monthNames = [
 
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+// Format date as YYYY-MM-DD using local time (not UTC)
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export default function CalendarView({ workouts, raceDate }: CalendarViewProps) {
   const { theme } = useTheme()
   const today = new Date()
@@ -41,7 +49,7 @@ export default function CalendarView({ workouts, raceDate }: CalendarViewProps) 
   const workoutsByDate: Record<string, Workout[]> = {}
   trainingWorkouts.forEach(workout => {
     if (workout.date) {
-      const dateKey = new Date(workout.date).toISOString().split('T')[0]
+      const dateKey = formatLocalDate(new Date(workout.date))
       if (!workoutsByDate[dateKey]) {
         workoutsByDate[dateKey] = []
       }
@@ -57,7 +65,7 @@ export default function CalendarView({ workouts, raceDate }: CalendarViewProps) 
 
   // Get race date for highlighting
   const raceDateObj = new Date(raceDate)
-  const raceDateKey = raceDateObj.toISOString().split('T')[0]
+  const raceDateKey = formatLocalDate(raceDateObj)
 
   // Navigate months
   function goToPreviousMonth() {
@@ -108,7 +116,7 @@ export default function CalendarView({ workouts, raceDate }: CalendarViewProps) 
   // Get date key for a day
   function getDateKey(day: number): string {
     const date = new Date(currentYear, currentMonth, day)
-    return date.toISOString().split('T')[0]
+    return formatLocalDate(date)
   }
 
   return (
