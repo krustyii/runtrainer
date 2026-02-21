@@ -134,6 +134,7 @@ export default function SettingsPage() {
 
   const themePreviewColors: Record<string, { accent: string; bg: string }> = {
     default: { accent: 'bg-indigo-500', bg: 'bg-gray-800' },
+    light: { accent: 'bg-indigo-500', bg: 'bg-gray-100' },
     runner: { accent: 'bg-orange-500', bg: 'bg-slate-800' },
     neon: { accent: 'bg-lime-500', bg: 'bg-zinc-900' },
     ocean: { accent: 'bg-cyan-500', bg: 'bg-slate-900' },
