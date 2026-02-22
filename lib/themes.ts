@@ -301,7 +301,7 @@ export function getTheme(themeName: string): Theme {
 }
 
 export function getWorkoutTypeColors(theme: Theme, type: string): { bg: string; text: string } {
-  switch (type) {
+  switch (type.toLowerCase()) {
     case 'easy':
       return { bg: theme.colors.workoutEasy, text: theme.colors.workoutEasyText }
     case 'tempo':
