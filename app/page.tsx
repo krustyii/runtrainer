@@ -29,32 +29,56 @@ interface PlanData {
   raceName?: string
 }
 
+interface Activity {
+  id: number
+  type: string
+  distance: number
+  duration: number
+  date: string
+}
+
 export default function Dashboard() {
   const { theme } = useTheme()
   const [planData, setPlanData] = useState<PlanData | null>(null)
+  const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showCalendar, setShowCalendar] = useState(false)
 
   useEffect(() => {
-    fetchPlan()
+    fetchData()
   }, [])
 
-  async function fetchPlan() {
+  async function fetchData() {
     try {
-      const res = await fetch('/api/plan')
-      if (res.status === 404) {
+      // Fetch both plan and activities in parallel
+      const [planRes, activitiesRes] = await Promise.all([
+        fetch('/api/plan'),
+        fetch('/api/activities?limit=100')
+      ])
+
+      if (planRes.status === 404) {
         setError('setup')
         return
       }
-      if (!res.ok) throw new Error('Failed to fetch plan')
-      const data = await res.json()
-      setPlanData(data)
+      if (!planRes.ok) throw new Error('Failed to fetch plan')
+
+      const planDataResult = await planRes.json()
+      setPlanData(planDataResult)
+
+      if (activitiesRes.ok) {
+        const activitiesData = await activitiesRes.json()
+        setActivities(activitiesData.activities?.filter((a: Activity) => a.type === 'Run') || [])
+      }
     } catch (err) {
       setError('Failed to load training plan')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function fetchPlan() {
+    fetchData()
   }
 
   if (loading) {
@@ -145,9 +169,24 @@ export default function Dashboard() {
   const raceDateObj = new Date(raceDate)
   const daysUntilRace = Math.ceil((raceDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
-  // Calculate streak (consecutive days with completed workouts)
-  const completedWorkouts = workouts.filter(w => w.completed && w.type !== 'rest')
-  const streak = calculateStreak(completedWorkouts)
+  // Calculate streak from actual activities
+  const streak = calculateStreakFromActivities(activities)
+
+  // Calculate total distance from actual activities (in km)
+  const totalDistanceFromActivities = activities.reduce((sum, a) => sum + (a.distance / 1000), 0)
+
+  // Get this week's start and end dates
+  const weekStart = new Date(today)
+  weekStart.setDate(today.getDate() - today.getDay())
+  weekStart.setHours(0, 0, 0, 0)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 7)
+
+  // Filter activities for this week
+  const thisWeekActivities = activities.filter(a => {
+    const activityDate = new Date(a.date)
+    return activityDate >= weekStart && activityDate < weekEnd
+  })
 
   // Prepare weekly data for stats
   const weeklyData = Array.from({ length: currentWeek }, (_, i) => {
@@ -156,7 +195,11 @@ export default function Dashboard() {
     const plannedDistance = weekWorkouts.reduce((sum, w) => sum + (w.distance || 0), 0)
     const completedInWeek = weekWorkouts.filter((w) => w.completed && w.type !== 'rest')
     const totalRuns = weekWorkouts.filter((w) => w.type !== 'rest').length
-    const actualDistance = completedInWeek.reduce((sum, w) => sum + (w.distance || 0), 0)
+
+    // Use actual activities for distance if available
+    const actualDistance = completedInWeek.length > 0
+      ? completedInWeek.reduce((sum, w) => sum + (w.distance || 0), 0)
+      : 0
 
     return {
       week: weekNum,
@@ -166,13 +209,14 @@ export default function Dashboard() {
     }
   })
 
-  // Calculate total distances
-  const totalDistanceCompleted = completedWorkouts.reduce((sum, w) => sum + (w.distance || 0), 0)
+  // Calculate total distances - use activities for actual distance
+  const totalDistanceCompleted = totalDistanceFromActivities
   const totalDistancePlanned = workouts
     .filter(w => w.weekNumber <= currentWeek && w.type !== 'rest')
     .reduce((sum, w) => sum + (w.distance || 0), 0)
 
-  const completedThisWeek = currentWeekWorkouts.filter(w => w.completed && w.type !== 'rest').length
+  // Count workouts completed this week based on activities
+  const completedThisWeek = thisWeekActivities.length
   const totalThisWeek = currentWeekWorkouts.filter(w => w.type !== 'rest').length
 
   return (
@@ -240,15 +284,12 @@ export default function Dashboard() {
   )
 }
 
-function calculateStreak(completedWorkouts: Workout[]): number {
-  if (completedWorkouts.length === 0) return 0
+function calculateStreakFromActivities(activities: Activity[]): number {
+  if (activities.length === 0) return 0
 
   // Sort by date descending
-  const sorted = [...completedWorkouts]
-    .filter(w => w.date)
-    .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())
-
-  if (sorted.length === 0) return 0
+  const sorted = [...activities]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   let streak = 0
   const today = new Date()
@@ -257,13 +298,13 @@ function calculateStreak(completedWorkouts: Workout[]): number {
   let checkDate = new Date(today)
 
   for (let i = 0; i < 30; i++) {
-    const hasWorkout = sorted.some(w => {
-      const workoutDate = new Date(w.date!)
-      workoutDate.setHours(0, 0, 0, 0)
-      return workoutDate.getTime() === checkDate.getTime()
+    const hasActivity = sorted.some(a => {
+      const activityDate = new Date(a.date)
+      activityDate.setHours(0, 0, 0, 0)
+      return activityDate.getTime() === checkDate.getTime()
     })
 
-    if (hasWorkout) {
+    if (hasActivity) {
       streak++
     } else if (streak > 0) {
       break
