@@ -196,6 +196,16 @@ export default function Dashboard() {
     const completedInWeek = weekWorkouts.filter((w) => w.completed && w.type !== 'rest')
     const totalRuns = weekWorkouts.filter((w) => w.type !== 'rest').length
 
+    // For current week, calculate completion from actual activities
+    let completionRate = 0
+    if (weekNum === currentWeek) {
+      // Use actual activities for current week
+      completionRate = totalRuns > 0 ? thisWeekActivities.length / totalRuns : 0
+    } else {
+      // Use workout completed field for past weeks
+      completionRate = totalRuns > 0 ? completedInWeek.length / totalRuns : 0
+    }
+
     // Use actual activities for distance if available
     const actualDistance = completedInWeek.length > 0
       ? completedInWeek.reduce((sum, w) => sum + (w.distance || 0), 0)
@@ -205,7 +215,7 @@ export default function Dashboard() {
       week: weekNum,
       plannedDistance,
       actualDistance,
-      completionRate: totalRuns > 0 ? completedInWeek.length / totalRuns : 0,
+      completionRate: Math.min(completionRate, 1), // Cap at 100%
     }
   })
 

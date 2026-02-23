@@ -10,7 +10,16 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git add:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(pkill:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout /t 8 /nobreak:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx dotenv:*)",
+      "Bash(set:*)",
+      "Bash(source:*)",
+      "Bash(POSTGRES_PRISMA_URL=\"postgres://8d3b921a9a0417bcb39cc7e98b436817fc8d9fdf37b61826f144fdb62c367d22:sk_iLIBxVWZObDUJaexqx3QG@db.prisma.io:5432/postgres?sslmode=require\" npx prisma db push:*)"
     ]
   }
 }
