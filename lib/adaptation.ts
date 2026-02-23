@@ -1,5 +1,5 @@
 import { prisma } from './db'
-import { PlannedWorkoutData, generateTrainingPlan, getWorkoutDate } from './training-plan'
+import { getWorkoutDate } from './training-plan'
 
 interface AdaptationResult {
   adjustments: string[]
@@ -152,18 +152,14 @@ export async function regeneratePlan(): Promise<void> {
   const settings = await prisma.settings.findFirst()
   if (!settings) return
 
-  // Get existing completed workouts
-  const completedWorkouts = await prisma.plannedWorkout.findMany({
-    where: { completed: true },
-  })
+  // Get all existing workouts
+  const allWorkouts = await prisma.plannedWorkout.findMany()
 
-  // Generate fresh plan
-  const newPlan = generateTrainingPlan(settings.raceDate)
+  // If there's no plan at all, don't regenerate (user needs to set up first)
+  if (allWorkouts.length === 0) return
 
-  // Delete uncompleted workouts
-  await prisma.plannedWorkout.deleteMany({
-    where: { completed: false },
-  })
+  // Get completed workouts
+  const completedWorkouts = allWorkouts.filter(w => w.completed)
 
   // Get last completed week for adaptation
   const lastCompletedWeek = Math.max(...completedWorkouts.map((w) => w.weekNumber), 0)
@@ -172,31 +168,33 @@ export async function regeneratePlan(): Promise<void> {
     // Analyze and get adaptations
     const adaptation = await analyzeAndAdapt(lastCompletedWeek)
 
-    // Apply adaptations to future weeks
-    const futureWorkouts = newPlan.filter((w) => w.weekNumber > lastCompletedWeek)
-    const adaptedWorkouts = await applyAdaptations(futureWorkouts, adaptation)
+    // Only adapt future uncompleted workouts - don't delete and recreate them
+    const futureWorkouts = allWorkouts.filter(
+      (w) => !w.completed && w.weekNumber > lastCompletedWeek
+    )
 
-    // Insert adapted workouts
-    for (const workout of adaptedWorkouts) {
-      // Check if this workout already exists
-      const existing = completedWorkouts.find(
-        (w) => w.weekNumber === workout.weekNumber && w.dayOfWeek === workout.dayOfWeek
-      )
+    // Apply adaptations to each future workout
+    for (const workout of futureWorkouts) {
+      if (workout.type === 'rest') continue
 
-      if (!existing) {
-        await prisma.plannedWorkout.create({
-          data: workout,
+      const updates: { distance?: number; duration?: number } = {}
+
+      if (workout.distance) {
+        updates.distance = Math.round(workout.distance * adaptation.volumeMultiplier * 10) / 10
+      }
+      if (workout.duration) {
+        updates.duration = Math.round(workout.duration * adaptation.volumeMultiplier)
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await prisma.plannedWorkout.update({
+          where: { id: workout.id },
+          data: updates,
         })
       }
     }
-  } else {
-    // No completed workouts, insert full plan
-    for (const workout of newPlan) {
-      await prisma.plannedWorkout.create({
-        data: workout,
-      })
-    }
   }
+  // If no completed workouts yet, do nothing - keep the existing plan as is
 }
 
 function isSameDay(date1: Date, date2: Date): boolean {

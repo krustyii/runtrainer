@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       // Regenerate plan if race date changed
       if (existing.raceDate.getTime() !== raceDate.getTime()) {
         await prisma.plannedWorkout.deleteMany()
-        const plan = generateTrainingPlan(raceDate)
+        const plan = generateTrainingPlan(raceDate, { forceFullPlan: true })
         for (const workout of plan) {
           await prisma.plannedWorkout.create({ data: workout })
         }
@@ -65,8 +65,8 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Generate initial training plan
-      const plan = generateTrainingPlan(raceDate)
+      // Generate initial full 12-week training plan
+      const plan = generateTrainingPlan(raceDate, { forceFullPlan: true })
       for (const workout of plan) {
         await prisma.plannedWorkout.create({ data: workout })
       }

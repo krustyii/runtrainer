@@ -22,9 +22,9 @@ export async function GET(request: NextRequest) {
       orderBy: [{ weekNumber: 'asc' }, { dayOfWeek: 'asc' }],
     })
 
-    // If no workouts exist, generate the plan
+    // If no workouts exist, generate the full 12-week plan
     if (workouts.length === 0) {
-      const plan = generateTrainingPlan(settings.raceDate)
+      const plan = generateTrainingPlan(settings.raceDate, { forceFullPlan: true })
       for (const workout of plan) {
         await prisma.plannedWorkout.create({ data: workout })
       }
@@ -74,12 +74,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.action === 'reset') {
-      // Delete all workouts and regenerate
+      // Delete all workouts and regenerate with full 12-week plan
       await prisma.plannedWorkout.deleteMany()
 
       const settings = await prisma.settings.findFirst()
       if (settings) {
-        const plan = generateTrainingPlan(settings.raceDate)
+        const plan = generateTrainingPlan(settings.raceDate, { forceFullPlan: true })
         for (const workout of plan) {
           await prisma.plannedWorkout.create({ data: workout })
         }
@@ -89,13 +89,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.action === 'clearAll') {
-      // Delete all activities and workouts, then regenerate plan
+      // Delete all activities and workouts, then regenerate full plan
       await prisma.activity.deleteMany()
       await prisma.plannedWorkout.deleteMany()
 
       const settings = await prisma.settings.findFirst()
       if (settings) {
-        const plan = generateTrainingPlan(settings.raceDate)
+        const plan = generateTrainingPlan(settings.raceDate, { forceFullPlan: true })
         for (const workout of plan) {
           await prisma.plannedWorkout.create({ data: workout })
         }

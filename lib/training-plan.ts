@@ -130,9 +130,11 @@ const baseWeeklyTemplates: Record<number, Omit<PlannedWorkoutData, 'weekNumber'>
 
 export function generateTrainingPlan(
   raceDate: Date,
-  currentDate: Date = new Date()
+  options: { forceFullPlan?: boolean; currentDate?: Date } = {}
 ): PlannedWorkoutData[] {
   const workouts: PlannedWorkoutData[] = []
+  const currentDate = options.currentDate || new Date()
+  const forceFullPlan = options.forceFullPlan ?? false
 
   // Get start of race week (Sunday) for consistent calculation
   const raceWeekStart = new Date(raceDate)
@@ -149,10 +151,18 @@ export function generateTrainingPlan(
 
   // Determine which week templates to use based on time available
   // Add 1 because race week counts as a training week
-  const planWeeks = Math.min(12, Math.max(4, weeksUntilRace + 1))
+  let planWeeks: number
+  let startWeek: number
 
-  // If less than 12 weeks, start from later in the plan
-  const startWeek = Math.max(1, 12 - planWeeks + 1)
+  if (forceFullPlan) {
+    // Always create a full 12-week plan
+    planWeeks = 12
+    startWeek = 1
+  } else {
+    planWeeks = Math.min(12, Math.max(4, weeksUntilRace + 1))
+    // If less than 12 weeks, start from later in the plan
+    startWeek = Math.max(1, 12 - planWeeks + 1)
+  }
 
   for (let planWeek = startWeek; planWeek <= 12; planWeek++) {
     const weekNumber = planWeek - startWeek + 1
