@@ -125,29 +125,6 @@ export async function analyzeAndAdapt(weekNumber: number): Promise<AdaptationRes
   }
 }
 
-export async function applyAdaptations(
-  baseWorkouts: PlannedWorkoutData[],
-  adaptation: AdaptationResult
-): Promise<PlannedWorkoutData[]> {
-  return baseWorkouts.map((workout) => {
-    if (workout.type === 'rest') return workout
-
-    const adaptedWorkout = { ...workout }
-
-    // Apply volume multiplier to distances
-    if (adaptedWorkout.distance) {
-      adaptedWorkout.distance = Math.round(adaptedWorkout.distance * adaptation.volumeMultiplier * 10) / 10
-    }
-
-    // Apply to duration as well
-    if (adaptedWorkout.duration) {
-      adaptedWorkout.duration = Math.round(adaptedWorkout.duration * adaptation.volumeMultiplier)
-    }
-
-    return adaptedWorkout
-  })
-}
-
 export async function regeneratePlan(): Promise<void> {
   const settings = await prisma.settings.findFirst()
   if (!settings) return
