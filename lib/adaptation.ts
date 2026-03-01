@@ -126,52 +126,10 @@ export async function analyzeAndAdapt(weekNumber: number): Promise<AdaptationRes
 }
 
 export async function regeneratePlan(): Promise<void> {
-  const settings = await prisma.settings.findFirst()
-  if (!settings) return
-
-  // Get all existing workouts
-  const allWorkouts = await prisma.plannedWorkout.findMany()
-
-  // If there's no plan at all, don't regenerate (user needs to set up first)
-  if (allWorkouts.length === 0) return
-
-  // Get completed workouts
-  const completedWorkouts = allWorkouts.filter(w => w.completed)
-
-  // Get last completed week for adaptation
-  const lastCompletedWeek = Math.max(...completedWorkouts.map((w) => w.weekNumber), 0)
-
-  if (lastCompletedWeek > 0) {
-    // Analyze and get adaptations
-    const adaptation = await analyzeAndAdapt(lastCompletedWeek)
-
-    // Only adapt future uncompleted workouts - don't delete and recreate them
-    const futureWorkouts = allWorkouts.filter(
-      (w) => !w.completed && w.weekNumber > lastCompletedWeek
-    )
-
-    // Apply adaptations to each future workout
-    for (const workout of futureWorkouts) {
-      if (workout.type === 'rest') continue
-
-      const updates: { distance?: number; duration?: number } = {}
-
-      if (workout.distance) {
-        updates.distance = Math.round(workout.distance * adaptation.volumeMultiplier * 10) / 10
-      }
-      if (workout.duration) {
-        updates.duration = Math.round(workout.duration * adaptation.volumeMultiplier)
-      }
-
-      if (Object.keys(updates).length > 0) {
-        await prisma.plannedWorkout.update({
-          where: { id: workout.id },
-          data: updates,
-        })
-      }
-    }
-  }
-  // If no completed workouts yet, do nothing - keep the existing plan as is
+  // This function is called after each activity is logged.
+  // We no longer modify workout distances here to avoid cumulative reductions.
+  // The plan structure is preserved and workouts are marked complete via linkActivityToWorkout.
+  // Future: implement proper adaptation that stores original distances separately.
 }
 
 function isSameDay(date1: Date, date2: Date): boolean {
